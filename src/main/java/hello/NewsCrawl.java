@@ -1,4 +1,4 @@
-package hello;
+package main.java.hello;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -19,6 +19,7 @@ import java.util.Scanner;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+
 import org.apache.commons.codec.binary.Base64;
 
 import static com.fasterxml.jackson.databind.ObjectMapper.*;
@@ -38,26 +39,11 @@ public class NewsCrawl {
 	private static final String NutchDir = "/Users/Bartek/Applications/apache-nutch-1.9";
 	private static final String NutchSeedDir = NutchDir + File.separator + "urls";
 	private static final String APIkey = "YbRJwaUTNNq6CPXBWMwJPK/P1LBvf5w4+gaMiKkemc8";
+	private static int pageCap = 60; // default value for search volume
 	
-	private ArrayList<Entry> news;
-
-	public NewsCrawl(){
-		news = new ArrayList<Entry>();
-	}
-
 	
-	/* Print Contents - News Information */
-	public void print(){
-		int count = 1;
-		for(Entry e : news){
-			System.out.println(count + ". " + e._title);
-			System.out.println(e._Source);
-			System.out.println(e._Date);
-			System.out.println(e._Url);
-			System.out.println("");
-			count++;
-		}
-	}
+	public NewsCrawl(){}
+
 	
 	/* Main method to get links using BING API*/
 	public void crawlArticles(String topic, int quantity) 
@@ -71,11 +57,11 @@ public class NewsCrawl {
 		URL url = new URL(urlStr);
 		String authStr = APIkey + ":" + APIkey;
 		
-		//encode
 		byte[] authEncBytes = Base64.encodeBase64(authStr.getBytes());
 		String authStringEnc = new String(authEncBytes);
 		
 		int offset = 0;
+		ArrayList<String> urls = new ArrayList<String>();
 		
 		//keep requesting new links till cap reached
 		while(offset < quantity){
@@ -97,15 +83,27 @@ public class NewsCrawl {
 	        	builder.append(response);
 	        }
 	       
-	        this.parseJSON(builder.toString());
+	        //parse json and add links to set
+	        urls.addAll(this.parseJSON(builder.toString()));
 	        
 	        offset += 15;
 	        url = new URL(urlStr + "&$skip=" + offset);
-	        
 		}
+		
+		System.out.println("Collected " + urls.size() + " links.");
+		
+		//save links to nutch dir
+		this.dumpLinks(urls);
+		
+		//run nutch crawl script
+		this.runScript();
+		
 	}
 	
-	private void parseJSON(String response){
+	/* returns parsed URL's */
+	private ArrayList<String> parseJSON(String response){
+		
+		ArrayList<String> results = new ArrayList<String>();
 		
 		try {
 			ObjectNode json = (ObjectNode) new ObjectMapper().readTree(response);
@@ -114,27 +112,24 @@ public class NewsCrawl {
 			Iterator<JsonNode> iterator = entries.iterator();
 			while(iterator.hasNext()){
 				ObjectNode o = (ObjectNode)iterator.next();
-				news.add(new Entry(
-						o.get("Title").asText(),
-						o.get("Url").asText(),
-						o.get("Source").asText(),
-						o.get("Date").asText()));
+				results.add(o.get("Url").asText());
 			}
 			
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		
+		return results;
+		
 	}
 	
-	//execute crawl for each term
+	/* execute crawl for each term */
 	public void addTerms(String[] terms){
 		for(String term : terms){
 			try {
-				this.crawlArticles(term, 60);
-				this.dumpLinks();
+				this.crawlArticles(term, pageCap);
 				this.runScript();
-				this.clear();
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -143,7 +138,7 @@ public class NewsCrawl {
 	
 	
 	/* Save links to text file - nutch seed links used for indexing web pages */
-	public void dumpLinks() throws IOException{
+	public void dumpLinks(ArrayList<String> urls) throws IOException{
 		
 		String directory = (NutchSeedDir != null) ? NutchSeedDir : System.getProperty("User.dir");		
 		System.out.println("Path: " +  directory);
@@ -155,8 +150,8 @@ public class NewsCrawl {
 		FileWriter fw = new FileWriter(output.getAbsoluteFile());
 		BufferedWriter bw = new BufferedWriter(fw);
 	
-		for(Entry e : news){
-			bw.write(e._Url);
+		for(String e : urls){
+			bw.write(e);
 			bw.newLine();
 		}
 	
@@ -174,7 +169,7 @@ public class NewsCrawl {
 				NutchSeedDir + File.separator, 
 				NutchDir + File.separator + "CrawledArticles/", 
 				"http://localhost:8983/solr/",
-				"" + news.size()
+				"" + pageCap
 				};
 		
 		System.out.println("Running script with size: " + cmd[cmd.length - 1]);
@@ -203,9 +198,6 @@ public class NewsCrawl {
 			
 	}
 	
-	public void clear(){
-		news.clear();
-	}
 
 	//Driver - testing
 	public static void main(String[] args) {
@@ -221,36 +213,12 @@ public class NewsCrawl {
 			System.out.println("> How many articles ? ");
 			int cap = sc.nextInt();
 			
-			newsCrawl.crawlArticles(arg, cap);
-			newsCrawl.print();
-			
-			
-			//newsCrawl.dumpLinks();
-			//newsCrawl.runScript();
-			//newsCrawl.clear();
-			
+			newsCrawl.crawlArticles(arg, cap);	
 			
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
 	
-	//inner class - quadruple for holding results
-	public class Entry {
-		
-		String _title;
-		String _Url;
-		String _Date;
-		String _Source;
-		
-		public Entry(String title, String Url, String Date, String Source){
-			_title = title;
-			_Url = Url;
-			_Date = Date;
-			_Source = Source;
-		}
-			
-	}
-
 
 }
