@@ -8,7 +8,7 @@
 
     <!-- Note there is no responsive meta tag here -->
 
-    <link rel="icon" href="../../favicon.ico">
+    <link rel="icon" href="images/newzr-logo.ico">
 
     <title>NewZr - Explore News Articles by Topic</title>
 
@@ -28,10 +28,10 @@
 </head>
 
 <body class="fuelux">
-
+<div id="background" src="images/newzr-bg.JPG"></div>
 <!-- Fixed navbar -->
-<nav class="navbar navbar-inverse navbar-default navbar-fixed-top" role="navigation">
-    <a id="brand" class="navbar-brand" href="#">NewZr</a>
+<nav id="main-navbar" class="hidden navbar navbar-inverse navbar-default navbar-fixed-top" role="navigation">
+    <a id="brand" class="pull-left" href="#"><img src="images/newzr-logo.png"></a>
 
     <div class="search input-group" role="search" id="search-box">
         <input type="search" class="form-control" placeholder="Search"/>
@@ -45,12 +45,29 @@
 </nav>
 
 <div id="main-container" class="container">
-    <div id="viewport">
+    <div id="intro-search" class="jumbotron center-block">
+        <img id="front-logo" class="center-block" src="images/newzr-front-logo.png"/>
+
+        <div class="search input-group" role="search" id="intro-search-box">
+            <input type="search" class="form-control" placeholder="Search"/>
+          <span class="input-group-btn">
+            <button class="btn btn-default" type="button">
+                <span class="glyphicon glyphicon-search"></span>
+                <span class="sr-only">Search</span>
+            </button>
+          </span>
+        </div>
+        <p>NewZr is a super-awesome news search engine that organizes articles into topics.</p>
+    </div>
+    <div class="hidden" id="viewport">
         <div id="left-main-panel">
             <div id="topics-panel">
                 <div class="panel panel-info">
                     <div class="panel-heading"><b>Topics</b></div>
                     <div class="panel-body">
+                        <div id="topics-loader" class="loader center-block" data-initialize="loader"></div>
+                        <div id="topics-list" class="list-group">
+                        </div>
                     </div>
                 </div>
             </div>
@@ -63,7 +80,7 @@
             </div>
         </div>
         <div id="right-main-panel">
-            <div class="loader center-block" data-initialize="loader" id="results-loader" style="display: none"></div>
+            <div class="loader center-block" data-initialize="loader" id="results-loader"></div>
             <div id="results-list"></div>
         </div>
     </div>
