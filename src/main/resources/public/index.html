@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <!-- Note there is no responsive meta tag here -->
+
+    <link rel="icon" href="../../favicon.ico">
+
+    <title>NewZr - Explore News Articles by Topic</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="//www.fuelcdn.com/fuelux/3.3.1/css/fuelux.min.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="non-responsive.css" rel="stylesheet">
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+    <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+    <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+</head>
+
+<body class="fuelux">
+
+<!-- Fixed navbar -->
+<nav class="navbar navbar-inverse navbar-default navbar-fixed-top" role="navigation">
+    <a id="brand" class="navbar-brand" href="#">NewZr</a>
+
+    <div class="search input-group" role="search" id="search-box">
+        <input type="search" class="form-control" placeholder="Search"/>
+          <span class="input-group-btn">
+            <button class="btn btn-default" type="button">
+                <span class="glyphicon glyphicon-search"></span>
+                <span class="sr-only">Search</span>
+            </button>
+          </span>
+    </div>
+</nav>
+
+<div id="main-container" class="container">
+    <div id="viewport">
+        <div id="left-main-panel">
+            <div id="topics-panel">
+                <div class="panel panel-info">
+                    <div class="panel-heading"><b>Topics</b></div>
+                    <div class="panel-body">
+                    </div>
+                </div>
+            </div>
+            <div id="feeds-panel">
+                <div class="panel panel-info">
+                    <div class="panel-heading"><b>Feeds</b></div>
+                    <div class="panel-body">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="right-main-panel">
+            <div class="loader center-block" data-initialize="loader" id="results-loader" style="display: none"></div>
+            <div id="results-list"></div>
+        </div>
+    </div>
+
+</div>
+<!-- /container -->
+
+<!-- Bootstrap core JavaScript
+================================================== -->
+<!-- Placed at the end of the document so the pages load faster -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+<script src="bootstrap/dist/js/bootstrap.min.js"></script>
+<script src="//www.fuelcdn.com/fuelux/3.3.1/js/fuelux.min.js"></script>
+<script src="js/jquery.bootstrap-growl.min.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
