@@ -1,0 +1,3 @@
+Go to the project directory and run this command:
+
+mvn install:install-file '-Dfile=lib/Classifier4J-0.6.jar' '-DgroupId=net.sf' '-DartifactId=Classifier4J' '-Dversion=0.6' -Dpackaging=jar

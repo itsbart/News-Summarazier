@@ -3,6 +3,7 @@ package hello;
 import java.util.concurrent.atomic.AtomicLong;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -38,6 +39,23 @@ public class GreetingController {
 		return results;
 	}
 
+	@RequestMapping(value="/feeds", headers="Accept=application/json")
+	public String getFeeds() {
+
+		//Get solr query results for a cluster
+		String results = "[]";
+
+		return results;
+	}
+
+	@RequestMapping(value="/feeds/{id}", headers="Accept=application/json")
+	public String getFeed(@PathVariable(value="id") String id) {
+
+		//Get solr query results for a cluster
+		String results = "{}";
+
+		return results;
+	}
 
 
 

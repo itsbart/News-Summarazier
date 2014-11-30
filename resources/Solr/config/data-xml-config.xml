@@ -1,0 +1,31 @@
+<dataConfig>
+        <dataSource type="FileDataSource" encoding="UTF-8" />
+        <document>
+		
+		<entity
+            name="pickupdir"
+            processor="FileListEntityProcessor"
+            rootEntity="false"
+            dataSource="null"
+            fileName="^[\w\d-]+\.xml$"
+            baseDir="C:\Development\Tools\solr-4.10.2\solr-4.10.2\example\exampledocs\NYT\"
+            recursive="true"
+        >
+		
+        <entity name="NYTpage"
+                processor="XPathEntityProcessor"
+                stream="true"
+                forEach="/nitf/"
+                url="${pickupdir.fileAbsolutePath}"
+				datasource="pickupdir"
+                transformer="DateFormatTransformer"
+                >
+            <field column="id"        xpath="/nitf/head/docdata/doc-id/@id-string" />
+            <field column="title"     xpath="/nitf/head/title" />
+            <field column="content"      xpath="/nitf/body/body.content/block[@class='full_text']//p" />
+			<field column="url"  xpath="/nitf/head/pubdata/@ex-ref" />
+            <field column="date" xpath="/nitf/head/pubdata/@date.publication" dateTimeFormat="yyyyMMdd'T'hhmmss" />
+       </entity>
+	  </entity>
+        </document>
+</dataConfig>
