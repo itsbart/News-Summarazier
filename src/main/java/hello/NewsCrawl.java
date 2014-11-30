@@ -1,3 +1,5 @@
+package hello;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -11,12 +13,15 @@ import java.net.ProtocolException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.Scanner;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.commons.codec.binary.Base64;
+
+import static com.fasterxml.jackson.databind.ObjectMapper.*;
 
 
 /**
@@ -39,7 +44,7 @@ public class NewsCrawl {
 	public NewsCrawl(){
 		news = new ArrayList<Entry>();
 	}
-	
+
 	
 	/* Print Contents - News Information */
 	public void print(){
@@ -103,19 +108,20 @@ public class NewsCrawl {
 	private void parseJSON(String response){
 		
 		try {
-			JSONObject json = new JSONObject(response);
-			JSONArray entries = json.getJSONObject("d").getJSONArray("results");
-							
-			for(int i = 0; i < entries.length(); i++){
-				JSONObject o = entries.getJSONObject(i);
+			ObjectNode json = (ObjectNode) new ObjectMapper().readTree(response);
+
+			JsonNode entries = json.get("d").get("results");
+			Iterator<JsonNode> iterator = entries.iterator();
+			while(iterator.hasNext()){
+				ObjectNode o = (ObjectNode)iterator.next();
 				news.add(new Entry(
-						o.getString("Title"),
-						o.getString("Url"),
-						o.getString("Source"),
-						o.getString("Date")));
+						o.get("Title").asText(),
+						o.get("Url").asText(),
+						o.get("Source").asText(),
+						o.get("Date").asText()));
 			}
 			
-		} catch (JSONException e) {
+		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
@@ -245,4 +251,6 @@ public class NewsCrawl {
 		}
 			
 	}
+
+
 }
