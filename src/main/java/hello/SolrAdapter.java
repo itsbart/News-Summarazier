@@ -3,13 +3,19 @@ package hello;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.util.JSONPObject;
+import hello.summarizer.Summarizer;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Created by daniel.bremiller on 11/25/2014.
@@ -29,19 +35,9 @@ private HashMap<String,ObjectNode> requestCache = new HashMap<String, ObjectNode
 		//fetch clustered solr results
 		ObjectNode results = fetchResults(query,true);
 
-		//run through summarizer apache mahout? summarize the collection in a few sentences
-		JsonNode clusters = results.get("clusters");
-		if(clusters.isArray())
-		{
-			Iterator<JsonNode> iterator = ((ArrayNode) clusters).iterator();
-			while(iterator.hasNext())
-			{
-				JsonNode next = iterator.next();
+		//run through summarizer. summarize the collection in a few sentences
+		generateClusterSummaries(results);
 
-				//TODO get document ids, then get the content from the response, then summarize
-				((ObjectNode)next).put("summary", "This is a Test");
-			}
-		}
 		//run through NLP engine  openNLP? Person/Places/Things
 
 		//return to UI append json
@@ -52,9 +48,88 @@ private HashMap<String,ObjectNode> requestCache = new HashMap<String, ObjectNode
 	public String getQueryCluster(String query, String cluster)
 	{
 		//get clustered solr results
-		ObjectNode results = fetchResults(query,false);
+		ObjectNode results = fetchResults(query,false).deepCopy();
+		List<String> clusterIds = getClusterIds(results, cluster);
+		JsonNode docs = getDocs(clusterIds, results);
 
-		return results.toString();
+		return docs.toString();
+	}
+
+	private List<String> getClusterIds(ObjectNode root, String cluster)
+{
+	ArrayList<String> strings = new ArrayList<String>();
+
+	//run through summarizer apache mahout? summarize the collection in a few sentences
+	JsonNode clusters = root.get("clusters");
+	for (JsonNode next : clusters)
+	{
+
+		for(JsonNode label: next.get("labels"))
+		{
+			if(label.asText().compareTo(cluster)==0)
+			{
+				//found the right cluster. Get ids.
+				for(JsonNode docId : next.get("docs"))
+					strings.add(docId.asText());
+				return strings;
+			}
+		}
+	}
+
+	return strings;
+}
+
+	private void generateClusterSummaries(ObjectNode root)
+	{
+		ArrayList<String> strings = new ArrayList<String>();
+
+		//run through summarizer apache mahout? summarize the collection in a few sentences
+		JsonNode clusters = root.get("clusters");
+		for (JsonNode next : clusters)
+		{
+
+			for(JsonNode label: next.get("labels"))
+			{
+				//get docIds so i can go get the content
+					for(JsonNode docId : next.get("docs"))
+						strings.add(docId.asText());
+			}
+
+			String content = getDocContent(strings, root);
+			String summary = Summarizer.summarize(content);
+			((ObjectNode) next).put("summary", summary);
+		}
+	}
+
+	private String getDocContent(List<String> strings, ObjectNode root)
+	{
+		JsonNode docs = root.path("response").path("docs");
+		StringBuilder builder = new StringBuilder();
+		for(JsonNode doc : docs)
+		{
+			for(String id : strings)
+			{
+				if(id.compareTo(doc.get("id").asText())==0)
+				{
+					for(JsonNode content : doc.get("content"))
+						builder.append(content.asText());
+				}
+			}
+		}
+		return builder.toString();
+	}
+
+	private JsonNode getDocs(List<String> strings, ObjectNode root)
+	{
+		ArrayNode aryNode = new ArrayNode(JsonNodeFactory.instance);
+
+		JsonNode docs = root.path("response").path("docs");
+		for(JsonNode doc : docs)
+		{
+			if(strings.contains(doc.get("id").asText()))
+				aryNode.add(doc.deepCopy());
+		}
+		return aryNode;
 	}
 
 	/***
