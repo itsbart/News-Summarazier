@@ -130,6 +130,14 @@ body {
     color: rgb(153, 51, 153);
 }
 
+.content-container a {
+    color: rgb(0, 0, 153) !important;
+}
+
+.content-container a:visited {
+    color: rgb(153, 51, 153) !important;
+}
+
 #floating-feed {
     background-color: white;
     border: 1px solid gray;

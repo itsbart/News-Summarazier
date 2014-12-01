@@ -18,13 +18,19 @@
         $feedsPanel = $("#feeds-panel"),
         $feedsList = $("#feeds-list"),
         $feedsHint = $("#feeds-hint"),
+        $feedsLoader = $("#feeds-loader"),
         $activeTopic = null,
         ALL_TOPICS = "All Topics",
         LABEL_KEY = "label",
         curQueryStr = null,
         curResults = null,
         $floatingFeed = $("#floating-feed"),
-        $addFeedButton = $("#add-feed-button");
+        $addFeedButton = $("#add-feed-button"),
+        $timelineView = $("#timeline-view"),
+        isTimeLineShowing = false,
+        timelineQueryStr,
+        CUR_SEARCH = "Current Search",
+        $activeFeed = null;
 
     function onResize() {
         var h = $topicsPanel.height();
@@ -49,15 +55,24 @@
 
                 // Build the list entry
                 entry = '<div><h4><a href="' + doc.url + '" target="_blank">';
-                for (j = 0; j < doc.title.length; j = j + 1) {
-                    entry += doc.title[j] + "&nbsp;";
+                if (typeof doc.title === "string") {
+                    entry += doc.title;
+                } else {
+                    for (j = 0; j < doc.title.length; j = j + 1) {
+                        entry += doc.title[j] + "&nbsp;";
+                    }
                 }
                 entry += '</a><br><small>' + doc.url + '</small></h4><span>';
                 if (doc.date) {
                     entry += '<em>' + moment(doc.date).format("MMM DD, YYYY") + "</em>&nbsp;-&nbsp;";
                 }
-                if (doc.content && doc.content.length > 0) {
-                    entry += doc.content[0];
+                if (doc.content) {
+                    if (typeof doc.content === "string") {
+                        entry += doc.content.substr(0, 255);
+                        entry += "...";
+                    } else if (doc.content.length > 0) {
+                        entry += doc.content[0];
+                    }
                 }
                 entry += '</span></div>';
                 $resultsList.append(entry);
@@ -112,7 +127,7 @@
             entry += numDocs + ')</a>';
             $activeTopic = $(entry);
             $activeTopic.click(onTopicClick);
-            $activeTopic.data("label", ALL_TOPICS);
+            $activeTopic.data(LABEL_KEY, ALL_TOPICS);
             $topicsList.append($activeTopic);
 
             for (i = 0; i < clusters.length; i = i + 1) {
@@ -150,6 +165,57 @@
         }
     }
 
+    function initTimeline() {
+        var timelineSource,
+            timelineDocs = [],
+            docs,
+            i,
+            doc,
+            content,
+            j;
+
+        if (!curResults) {
+            return;
+        }
+
+        if (timelineQueryStr !== curQueryStr) {
+            timelineQueryStr = curQueryStr;
+
+            docs = curResults.response.docs;
+
+            for (i = 0; i < docs.length; i = i + 1) {
+                doc = docs[i];
+
+                content = "";
+                for (j = 0; j < doc.content.length; j = j + 1) {
+                    content += doc.content[j] + "<br>";
+                }
+
+                timelineDocs.push({
+                    "startDate": moment(doc.date).format("YYYY,MM,DD"),
+                    "headline": '<a href="' + doc.url + '" target="_blank">' + doc.title[0] + '</a>',
+                    "text": content
+                });
+            }
+
+            timelineSource = {
+                "timeline": {
+                    "headline": "Welcome to the Timeline for: " + curQueryStr,
+                    "type": "default",
+                    "text": "Click on the side arrows or use the Timeline slider below to navigate the news articles",
+                    "date": timelineDocs
+                }
+            };
+
+            createStoryJS({
+                type: 'timeline',
+                width: '100%',
+                height: '100%',
+                source: timelineSource,
+                embed_id: 'timeline-view'
+            });
+        }
+    }
 
     function onSearch(event, queryStr) {
         curQueryStr = queryStr;
@@ -160,6 +226,11 @@
         $resultsList.empty();
         $resultsLoader.fadeIn();
         $addFeedButton.removeAttr("disabled");
+
+        $timelineView.empty();
+        if (isTimeLineShowing) {
+            initTimeline();
+        }
 
         $.ajax({
             url: "query",
@@ -179,12 +250,88 @@
         });
     }
 
+    function onFeedClick() {
+        var label;
+
+        if ($activeFeed) {
+            $activeFeed.removeClass("active");
+        }
+        $activeFeed = $(this);
+        $activeFeed.addClass("active");
+
+        $resultsList.empty();
+        label = $activeFeed.data(LABEL_KEY);
+        if (label === CUR_SEARCH) {
+            createResultsList(curResults.response.docs);
+        } else if (label) {
+            $resultsLoader.show();
+            $.ajax({
+                url: "feeds/" + label,
+                dataType: "json"
+            }).done(function (results) {
+                $resultsLoader.hide();
+                createResultsList(results.response.docs);
+            }).fail(function (jqXHR, textStatus, errorThrown) {
+                $.bootstrapGrowl("Error executing query/cluster", {type: "danger", delay: 15000});
+            });
+        }
+
+    }
+
+    function checkFeeds() {
+        $feedsLoader.show();
+
+        $.ajax({
+            url: "feeds",
+            dataType: "json"
+        }).done(function (results) {
+            var i,
+                entry;
+
+            $feedsLoader.hide();
+
+            if (results && results.length > 0) {
+                $feedsHint.hide();
+                $feedsList.empty();
+
+                entry = '<a href="#" class="list-group-item active">' + CUR_SEARCH + '</a>';
+                $activeFeed = $(entry);
+                $activeFeed.data(LABEL_KEY, CUR_SEARCH);
+                $activeFeed.click(onFeedClick);
+                $feedsList.append($activeFeed);
+
+                for (i = 0; i < results.length; i = i + 1) {
+                    entry = '<a href="#" class="list-group-item">' + results[i] + '</a>';
+
+                    // feeds click handler
+                    entry = $(entry);
+                    entry.click(onFeedClick);
+
+                    entry.data(LABEL_KEY, results[i]);
+
+                    $feedsList.append(entry);
+                }
+            } else {
+                $feedsHint.show();
+            }
+
+        }).fail(function (jqXHR, textStatus, errorThrown) {
+            $.bootstrapGrowl("Error fetching feeds", {type: "danger", delay: 15000});
+        });
+    }
+
     function addFeed() {
-        var entry;
         if (curQueryStr) {
             $feedsHint.hide();
-            entry = '<a href="#" class="list-group-item">' + curQueryStr + '</a>';
-            $feedsList.append(entry);
+            $feedsLoader.show();
+            $.ajax({
+                url: "feeds/" + curQueryStr + "/create",
+                dataType: "text"
+            }).done(function (results) {
+                checkFeeds();
+            }).fail(function (jqXHR, textStatus, errorThrown) {
+                $.bootstrapGrowl("Error creating feed", {type: "danger", delay: 15000});
+            });
         }
     }
 
@@ -228,56 +375,16 @@
         });
 
         $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
-            var timelineSource,
-                timelineDocs = [],
-                docs,
-                i,
-                doc,
-                content,
-                j;
-
             if ($(e.target).attr("href") === "#timeline") {
-                $("#timeline-view").empty();
-
-                if (!curResults) {
-                    return;
-                }
-
-                docs = curResults.response.docs;
-
-                for (i = 0; i < docs.length; i = i + 1) {
-                    doc = docs[i];
-
-                    content = "";
-                    for (j = 0; j < doc.content.length; j = j + 1) {
-                        content += doc.content[j] + "&nbsp;";
-                    }
-
-                    timelineDocs.push({
-                        "startDate": moment(doc.date).format("YYYY,MM,DD"),
-                        "headline": doc.title[0],
-                        "text": content
-                    });
-                }
-
-                timelineSource = {
-                    "timeline": {
-                        "headline": "Welcome to the Timeline for: " + curQueryStr,
-                        "type": "default",
-                        "text": "Click on the arrows to navigate the news articles",
-                        "date": timelineDocs
-                    }
-                };
-
-                createStoryJS({
-                    type: 'timeline',
-                    width: '100%',
-                    height: '100%',
-                    source: timelineSource,
-                    embed_id: 'timeline-view'
-                });
+                isTimeLineShowing = true;
+                initTimeline();
+            } else {
+                onResize();
+                isTimeLineShowing = false;
             }
         });
+
+        checkFeeds();
     });
 }());
 
