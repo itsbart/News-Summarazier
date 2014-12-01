@@ -3,6 +3,8 @@ package main.java.hello;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -14,6 +16,7 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.Properties;
 import java.util.Scanner;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -36,13 +39,22 @@ import static com.fasterxml.jackson.databind.ObjectMapper.*;
 public class NewsCrawl {
 
 	/* !!! STATIC FIELDS - SET FOR PROPER EXECUTION !!! */
-	private static final String NutchDir = "/Users/Bartek/Applications/apache-nutch-1.9";
-	private static final String NutchSeedDir = NutchDir + File.separator + "urls";
-	private static final String APIkey = "YbRJwaUTNNq6CPXBWMwJPK/P1LBvf5w4+gaMiKkemc8";
-	private static int pageCap = 60; // default value for search volume
+	private  String NutchDir;
+	private  String NutchSeedDir;
+	private  String APIkey;
+	private  int pageCap;
 	
 	
-	public NewsCrawl(){}
+	public NewsCrawl(){
+		
+		try {
+			//load configuration file
+			this.loadConfig();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+	}
 
 	
 	/* Main method to get links using BING API*/
@@ -96,7 +108,7 @@ public class NewsCrawl {
 		this.dumpLinks(urls);
 		
 		//run nutch crawl script
-		this.runScript();
+		this.runScript(topic);
 		
 	}
 	
@@ -129,11 +141,13 @@ public class NewsCrawl {
 		for(String term : terms){
 			try {
 				this.crawlArticles(term, pageCap);
-				this.runScript();
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
 		}
+		
+		System.out.println("Finished batch");
+		
 	}
 	
 	
@@ -161,19 +175,17 @@ public class NewsCrawl {
 	}
 	
 	/* Runs Nutch crawl script over crawled articles */
-	public void runScript() throws IOException{
+	public void runScript(String topic) throws IOException{
 	 
 		//script dir
 		String[] cmd = { 
 				NutchDir + File.separator + "bin" + File.separator + "crawl", 
 				NutchSeedDir + File.separator, 
-				NutchDir + File.separator + "CrawledArticles/", 
-				"http://localhost:8983/solr/",
+				NutchDir + File.separator + "CrawledArticles" + File.separator + topic + File.separator, 
+				"http://localhost:8983/solr/collection2",
 				"" + pageCap
 				};
-		
-		System.out.println("Running script with size: " + cmd[cmd.length - 1]);
-		
+				
 		//run process
 		Runtime rt = Runtime.getRuntime();
 		Process proc = rt.exec(cmd);
@@ -191,20 +203,39 @@ public class NewsCrawl {
 		}
 
 		// read any errors from the attempted command
-		System.out.println("Here is the standard error of the command (if any):\n");
 		while ((s = stdError.readLine()) != null) {
 		    System.out.println(s);
 		}
 			
 	}
 	
+	private void loadConfig() throws IOException{
+
+		Properties prop = new Properties();
+		String propFileName = "config.properties";
+	
+		InputStream inputStream = new FileInputStream(propFileName);
+		
+		if (inputStream != null) {
+			prop.load(inputStream);
+		} 
+		
+		NutchDir = prop.getProperty("NutchDir");
+		NutchSeedDir = prop.getProperty("NutchSeedDir");
+		APIkey = prop.getProperty("APIkey");
+		pageCap = Integer.parseInt(prop.getProperty("pageCap"));
+				
+	}
+	
 
 	//Driver - testing
 	public static void main(String[] args) {
 	
-		try {
+
+
+		NewsCrawl newsCrawl = new NewsCrawl();
 			
-			NewsCrawl newsCrawl = new NewsCrawl();
+			/*
 			Scanner sc = new Scanner(System.in);
 			
 			System.out.println("> Search for: ");
@@ -213,11 +244,14 @@ public class NewsCrawl {
 			System.out.println("> How many articles ? ");
 			int cap = sc.nextInt();
 			
-			newsCrawl.crawlArticles(arg, cap);	
 			
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+			newsCrawl.crawlArticles(arg, cap);
+			*/
+		String[] topics = {"interstellar", "immigration", "leonardo dicaprio", "gta5"};
+		newsCrawl.addTerms(topics);
+	
+
+		
 	}
 	
 
