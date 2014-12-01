@@ -4,6 +4,7 @@ html, body {
 
 body {
     background-color: #f5f5f5;
+    overflow: hidden;
 }
 
 #background {
@@ -95,7 +96,14 @@ body {
 
 .loader {
     display: none;
+}
+
+#results-loader {
     top: 50%;
+}
+
+#topics-loader {
+    top: 25%
 }
 
 #results-list h4 {
@@ -111,4 +119,12 @@ body {
     color: rgb(153, 51, 153);
 }
 
+#floating-feed {
+    background-color: white;
+    border: 1px solid gray;
+    border-radius: 5px;
+    padding: 5px;
+    position: absolute;
+    z-index: 9999;
+}
 
