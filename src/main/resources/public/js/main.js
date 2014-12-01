@@ -146,6 +146,14 @@
                 entry = $(entry);
                 entry.click(onTopicClick);
 
+                // popover
+                entry.popover({
+                    trigger: "hover",
+                    content: cluster.summary,
+                    delay: {"show": 500, "hide": 100},
+                    title: "Summary"
+                });
+
                 // Save label data for topic click handler
                 entry.data(LABEL_KEY, label);
 
