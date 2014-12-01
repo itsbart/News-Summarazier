@@ -63,7 +63,7 @@ public class NewsCrawl {
 
 			init();
 		} catch (IOException e) {
-			e.printStackTrace();
+			log.log(Level.SEVERE, " Nutch has failed to initialize ");
 		}
 		
 	}
@@ -181,6 +181,12 @@ public class NewsCrawl {
 	
 	/* execute crawl for each term */
 	public void addTerms(String[] terms){
+		if(NutchDir==null)
+		{
+			log.log(Level.SEVERE, "Skipping term because Nutch has failed to initialize ");
+			return;
+
+		}
 		for(String term : terms){
 			if(!pastTerms.contains(term))
 			{
