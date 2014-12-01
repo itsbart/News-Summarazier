@@ -53,7 +53,7 @@ public class GreetingController {
 	public String getFeeds() {
 
 		//Get solr query results for a cluster
-		String results = "[]";
+		String results = manager.getFeeds();
 
 		return results;
 	}
@@ -62,9 +62,18 @@ public class GreetingController {
 	public String getFeed(@PathVariable(value="id") String id) {
 
 		//Get solr query results for a cluster
-		String results = "{}";
+		String results = manager.getFeed(id);
 
 		return results;
+	}
+
+	@RequestMapping(value="/feeds/{id}/create", headers="Accept=application/json")
+	public String addFeed(@PathVariable(value="id") String id) {
+
+		//Get solr query results for a cluster
+		manager.addFeed(id);
+
+		return "success";
 	}
 
 
