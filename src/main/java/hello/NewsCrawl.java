@@ -1,4 +1,4 @@
-package main.java.hello;
+package hello;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -18,6 +18,11 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Properties;
 import java.util.Scanner;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -43,22 +48,58 @@ public class NewsCrawl {
 	private  String NutchSeedDir;
 	private  String APIkey;
 	private  int pageCap;
-	
+	private ConcurrentLinkedQueue<String> queue = new ConcurrentLinkedQueue<String>();
+	private int state =0;  //idle, running
+
+	private static final Logger log = Logger.getLogger("NewsCrawler");
 	
 	public NewsCrawl(){
 		
 		try {
 			//load configuration file
 			this.loadConfig();
+
+			init();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 		
 	}
 
-	
+	private void init()
+	{
+		TimerTask task = new TimerTask(){
+
+			@Override
+			public void run()
+			{
+
+				if(state==0 && !queue.isEmpty())
+				{
+					state=1;
+					String term = queue.peek();
+					try {
+						log.log(Level.INFO, "Starting crawl for term = " + term );
+
+						crawlArticles(term, pageCap);
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+					state=0;
+				}else
+				{
+					log.log(Level.INFO, "skipping crawling because either queue is empty or crawler is working. state = " + state + " queue.size = " + queue.size() );
+				}
+			}
+		};
+		Timer timer = new Timer(true);
+		timer.scheduleAtFixedRate(task, 0, 10 * 1000);
+
+	}
+
+
 	/* Main method to get links using BING API*/
-	public void crawlArticles(String topic, int quantity) 
+	public  void crawlArticles(String topic, int quantity)
 			throws MalformedURLException, IOException {
 	     
     	//encode URL
@@ -139,13 +180,8 @@ public class NewsCrawl {
 	/* execute crawl for each term */
 	public void addTerms(String[] terms){
 		for(String term : terms){
-			try {
-				this.crawlArticles(term, pageCap);
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
+			queue.add(term);
 		}
-		
 		System.out.println("Finished batch");
 		
 	}
