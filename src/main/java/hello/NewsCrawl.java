@@ -108,7 +108,7 @@ public class NewsCrawl {
 		this.dumpLinks(urls);
 		
 		//run nutch crawl script
-		this.runScript();
+		this.runScript(topic);
 		
 	}
 	
@@ -141,11 +141,13 @@ public class NewsCrawl {
 		for(String term : terms){
 			try {
 				this.crawlArticles(term, pageCap);
-				this.runScript();
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
 		}
+		
+		System.out.println("Finished batch");
+		
 	}
 	
 	
@@ -173,19 +175,17 @@ public class NewsCrawl {
 	}
 	
 	/* Runs Nutch crawl script over crawled articles */
-	public void runScript() throws IOException{
+	public void runScript(String topic) throws IOException{
 	 
 		//script dir
 		String[] cmd = { 
 				NutchDir + File.separator + "bin" + File.separator + "crawl", 
 				NutchSeedDir + File.separator, 
-				NutchDir + File.separator + "CrawledArticles/", 
-				"http://localhost:8983/solr/",
+				NutchDir + File.separator + "CrawledArticles" + File.separator + topic + File.separator, 
+				"http://localhost:8983/solr/collection2",
 				"" + pageCap
 				};
-		
-		System.out.println("Running script with size: " + cmd[cmd.length - 1]);
-		
+				
 		//run process
 		Runtime rt = Runtime.getRuntime();
 		Process proc = rt.exec(cmd);
@@ -203,7 +203,6 @@ public class NewsCrawl {
 		}
 
 		// read any errors from the attempted command
-		System.out.println("Here is the standard error of the command (if any):\n");
 		while ((s = stdError.readLine()) != null) {
 		    System.out.println(s);
 		}
@@ -225,12 +224,7 @@ public class NewsCrawl {
 		NutchSeedDir = prop.getProperty("NutchSeedDir");
 		APIkey = prop.getProperty("APIkey");
 		pageCap = Integer.parseInt(prop.getProperty("pageCap"));
-		
-		System.out.println(NutchDir);
-		System.out.println(NutchSeedDir);
-		System.out.println(APIkey);
-		System.out.println(pageCap);
-		
+				
 	}
 	
 
@@ -238,11 +232,10 @@ public class NewsCrawl {
 	public static void main(String[] args) {
 	
 
-		try {
+
+		NewsCrawl newsCrawl = new NewsCrawl();
 			
-			NewsCrawl newsCrawl = new NewsCrawl();
-			
-			
+			/*
 			Scanner sc = new Scanner(System.in);
 			
 			System.out.println("> Search for: ");
@@ -252,12 +245,12 @@ public class NewsCrawl {
 			int cap = sc.nextInt();
 			
 			
-			newsCrawl.crawlArticles(arg, cap);	
-		
-			
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+			newsCrawl.crawlArticles(arg, cap);
+			*/
+		String[] topics = {"interstellar", "immigration", "leonardo dicaprio", "gta5"};
+		newsCrawl.addTerms(topics);
+	
+
 		
 	}
 	
