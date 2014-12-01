@@ -31,7 +31,7 @@ public class SolrAdapter
 {
 
 private final String SOLRURL = "http://ec2-54-148-45-194.us-west-2.compute.amazonaws.com:8983/solr/collection1/clustering?wt=json&indent=true&df=text&rows=100&fl=id,title,date,content,url,score	";
-	private final String SOLRNUTCHURL = "http://ec2-54-148-45-194.us-west-2.compute.amazonaws.com:8983/solr/collection2/select?wt=json&indent=true&df=text&rows=100&fl=id,title,date,content,url,score	";
+	private final String SOLRNUTCHURL = "http://ec2-54-148-45-194.us-west-2.compute.amazonaws.com:8983/solr/collection2/select?wt=json&indent=true&rows=100&fl=id,title,date,content,url,score	";
 
 	private HashMap<String,ObjectNode> requestCache = new HashMap<String, ObjectNode>();
 	private HashMap<String,ObjectNode> feedResults = new HashMap<String, ObjectNode>();
@@ -49,11 +49,12 @@ private final String SOLRURL = "http://ec2-54-148-45-194.us-west-2.compute.amazo
 				for(String s : feedNutch.keySet())
 				{
 					feedNutch.put(s, fetchSolrNutchResults(s));
+					Logger.getLogger("SolrAdapter").log(Level.INFO,"fetched solr results from nutch core with query :" + s);
 				}
 			}
 		};
 		Timer timer = new Timer(true);
-		timer.scheduleAtFixedRate(task, 0, 120 * 1000);
+		timer.scheduleAtFixedRate(task, 0, 30 * 1000);
 
 	}
 

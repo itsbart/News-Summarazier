@@ -64,6 +64,7 @@ public class NewsCrawl {
 			init();
 		} catch (IOException e) {
 			log.log(Level.SEVERE, " Nutch has failed to initialize ");
+			e.printStackTrace();
 		}
 		
 	}
