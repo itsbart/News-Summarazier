@@ -3,6 +3,8 @@ package main.java.hello;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -14,6 +16,7 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.Properties;
 import java.util.Scanner;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -36,13 +39,22 @@ import static com.fasterxml.jackson.databind.ObjectMapper.*;
 public class NewsCrawl {
 
 	/* !!! STATIC FIELDS - SET FOR PROPER EXECUTION !!! */
-	private static final String NutchDir = "/Users/Bartek/Applications/apache-nutch-1.9";
-	private static final String NutchSeedDir = NutchDir + File.separator + "urls";
-	private static final String APIkey = "YbRJwaUTNNq6CPXBWMwJPK/P1LBvf5w4+gaMiKkemc8";
-	private static int pageCap = 60; // default value for search volume
+	private  String NutchDir;
+	private  String NutchSeedDir;
+	private  String APIkey;
+	private  int pageCap;
 	
 	
-	public NewsCrawl(){}
+	public NewsCrawl(){
+		
+		try {
+			//load configuration file
+			this.loadConfig();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+	}
 
 	
 	/* Main method to get links using BING API*/
@@ -198,13 +210,39 @@ public class NewsCrawl {
 			
 	}
 	
+	private void loadConfig() throws IOException{
+
+		Properties prop = new Properties();
+		String propFileName = "config.properties";
+	
+		InputStream inputStream = new FileInputStream(propFileName);
+		
+		if (inputStream != null) {
+			prop.load(inputStream);
+		} 
+		
+		NutchDir = prop.getProperty("NutchDir");
+		NutchSeedDir = prop.getProperty("NutchSeedDir");
+		APIkey = prop.getProperty("APIkey");
+		pageCap = Integer.parseInt(prop.getProperty("pageCap"));
+		
+		System.out.println(NutchDir);
+		System.out.println(NutchSeedDir);
+		System.out.println(APIkey);
+		System.out.println(pageCap);
+		
+	}
+	
 
 	//Driver - testing
 	public static void main(String[] args) {
 	
+
 		try {
 			
 			NewsCrawl newsCrawl = new NewsCrawl();
+			
+			
 			Scanner sc = new Scanner(System.in);
 			
 			System.out.println("> Search for: ");
@@ -213,11 +251,14 @@ public class NewsCrawl {
 			System.out.println("> How many articles ? ");
 			int cap = sc.nextInt();
 			
+			
 			newsCrawl.crawlArticles(arg, cap);	
+		
 			
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		
 	}
 	
 
