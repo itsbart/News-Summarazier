@@ -6,7 +6,7 @@
 // jslint options
 /*----------------------------------------------------------*/
 /*jslint browser: true, todo: true, unparam:true */
-/*global console, $, moment */
+/*global console, $, moment, createStoryJS */
 
 (function () {
     'use strict';
@@ -193,12 +193,15 @@
             $searchBox = $("#search-box");
 
         $(window).resize(onResize);
+        setTimeout(function () {
+            $introSearchBox.find("input").focus();
+        }, 500);
 
         $introSearchBox.search();
         $introSearchBox.on('searched.fu.search', function (event, queryStr) {
             $("#background").fadeOut();
             $("#intro-search").remove();
-            $("#main-navbar, #viewport").removeClass("hidden");
+            $("#main-navbar, #main-tabs, #viewport").removeClass("hidden");
             $("#search-box input").val(queryStr);
             $("#search-box button").click();
             onResize();
@@ -222,6 +225,58 @@
                 addFeed();
                 $addFeedButton.attr("disabled", "disabled");
             });
+        });
+
+        $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+            var timelineSource,
+                timelineDocs = [],
+                docs,
+                i,
+                doc,
+                content,
+                j;
+
+            if ($(e.target).attr("href") === "#timeline") {
+                $("#timeline-view").empty();
+
+                if (!curResults) {
+                    return;
+                }
+
+                docs = curResults.response.docs;
+
+                for (i = 0; i < docs.length; i = i + 1) {
+                    doc = docs[i];
+
+                    content = "";
+                    for (j = 0; j < doc.content.length; j = j + 1) {
+                        content += doc.content[j] + "&nbsp;";
+                    }
+
+                    timelineDocs.push({
+                        "startDate": moment(doc.date).format("YYYY,MM,DD"),
+                        "headline": doc.title[0],
+                        "text": content
+                    });
+                }
+
+                timelineSource = {
+                    "timeline": {
+                        "headline": "Welcome to the Timeline for: " + curQueryStr,
+                        "type": "default",
+                        "text": "Click on the arrows to navigate the news articles",
+                        "date": timelineDocs
+                    }
+                };
+
+                createStoryJS({
+                    type: 'timeline',
+                    width: '100%',
+                    height: '100%',
+                    source: timelineSource,
+                    embed_id: 'timeline-view'
+                });
+            }
         });
     });
 }());
