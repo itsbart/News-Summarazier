@@ -19,6 +19,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -29,10 +31,31 @@ public class SolrAdapter
 {
 
 private final String SOLRURL = "http://ec2-54-148-45-194.us-west-2.compute.amazonaws.com:8983/solr/collection1/clustering?wt=json&indent=true&df=text&rows=100&fl=id,title,date,content,url,score	";
-private HashMap<String,ObjectNode> requestCache = new HashMap<String, ObjectNode>();
+	private final String SOLRNUTCHURL = "http://ec2-54-148-45-194.us-west-2.compute.amazonaws.com:8983/solr/collection2/select?wt=json&indent=true&df=text&rows=100&fl=id,title,date,content,url,score	";
 
+	private HashMap<String,ObjectNode> requestCache = new HashMap<String, ObjectNode>();
+	private HashMap<String,ObjectNode> feedResults = new HashMap<String, ObjectNode>();
+	private HashMap<String,ObjectNode> feedNutch = new HashMap<String, ObjectNode>();
+
+
+	private NewsCrawl crawler = new NewsCrawl();
 	public SolrAdapter()
-	{}
+	{
+		TimerTask task = new TimerTask(){
+
+			@Override
+			public void run()
+			{
+				for(String s : feedNutch.keySet())
+				{
+					feedNutch.put(s, fetchSolrNutchResults(s));
+				}
+			}
+		};
+		Timer timer = new Timer(true);
+		timer.scheduleAtFixedRate(task, 0, 120 * 1000);
+
+	}
 
 
 	public String solrQuery(String query, boolean force)
@@ -104,6 +127,30 @@ private HashMap<String,ObjectNode> requestCache = new HashMap<String, ObjectNode
 		results.put("clusters", clusters);
 		return results.toString();
 
+	}
+
+	public void addFeed(String query)
+	{
+		if(!feedNutch.containsKey(query))
+		{
+			crawler.addTerms(new String[]{query});
+			feedNutch.put(query,new ObjectNode(JsonNodeFactory.instance));
+		}
+	}
+
+	public String getFeeds()
+	{
+		ArrayNode node  = new ArrayNode(JsonNodeFactory.instance);
+		for(String feed : feedNutch.keySet())
+		{
+			node.add(feed);
+		}
+			return node.toString();
+	}
+
+	public String getFeed(String query)
+	{
+		return feedNutch.get(query).toString();
 	}
 
 	private List<String> getClusterIds(ObjectNode root, String cluster)
@@ -222,5 +269,20 @@ private HashMap<String,ObjectNode> requestCache = new HashMap<String, ObjectNode
 
 	}
 
+	private ObjectNode fetchSolrNutchResults(String query)
+	{
+		RestTemplate restTemplate = new RestTemplate();
+		String json = restTemplate.getForObject(SOLRNUTCHURL+"&q="+query, String.class);
+		ObjectNode page = null;
+		try
+		{
+			page = (ObjectNode) new ObjectMapper().readTree(json);
+		} catch (IOException e)
+		{
+			e.printStackTrace();
+		}
+		return page;
+
+	}
 
 }
