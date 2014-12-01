@@ -15,6 +15,7 @@ import java.net.ProtocolException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Properties;
 import java.util.Scanner;
@@ -49,6 +50,7 @@ public class NewsCrawl {
 	private  String APIkey;
 	private  int pageCap;
 	private ConcurrentLinkedQueue<String> queue = new ConcurrentLinkedQueue<String>();
+	private HashSet<String> pastTerms = new HashSet<String>();
 	private int state =0;  //idle, running
 
 	private static final Logger log = Logger.getLogger("NewsCrawler");
@@ -180,7 +182,14 @@ public class NewsCrawl {
 	/* execute crawl for each term */
 	public void addTerms(String[] terms){
 		for(String term : terms){
-			queue.add(term);
+			if(!pastTerms.contains(term))
+			{
+				pastTerms.add(term);
+				queue.add(term);
+			}else
+			{
+				log.log(Level.INFO, "Skipping term because it has already been searched on : term : " + term);
+			}
 		}
 		System.out.println("Finished batch");
 		
