@@ -1,3 +1,7 @@
-Go to the project directory and run this command:
+Go to the project directory and run these commands:
 
 mvn install:install-file '-Dfile=lib/Classifier4J-0.6.jar' '-DgroupId=net.sf' '-DartifactId=Classifier4J' '-Dversion=0.6' -Dpackaging=jar
+
+mvn install:install-file '-Dfile=lib/javaml-0.1.5.jar' '-DgroupId=net.sf' '-DartifactId=javaml' '-Dversion=0.1.5' -Dpackaging=jar
+
+mvn install:install-file '-Dfile=lib/ajt-1.20.jar' '-DgroupId=net.sf' '-DartifactId=ajt' '-Dversion=1.20' -Dpackaging=jar

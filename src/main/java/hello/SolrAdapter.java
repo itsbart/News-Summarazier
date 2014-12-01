@@ -6,11 +6,16 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.util.JSONPObject;
+import hello.cluster.Cluster;
 import hello.summarizer.Summarizer;
+import net.sf.javaml.core.Dataset;
+import net.sf.javaml.core.Instance;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -23,7 +28,7 @@ import java.util.logging.Logger;
 public class SolrAdapter
 {
 
-private final String SOLRURL = "http://ec2-54-148-45-194.us-west-2.compute.amazonaws.com:8983/solr/collection1/clustering?wt=json&indent=true&df=text&rows=100&dl=id,title,date,content,url,score	";
+private final String SOLRURL = "http://ec2-54-148-45-194.us-west-2.compute.amazonaws.com:8983/solr/collection1/clustering?wt=json&indent=true&df=text&rows=100&fl=id,title,date,content,url,score	";
 private HashMap<String,ObjectNode> requestCache = new HashMap<String, ObjectNode>();
 
 	public SolrAdapter()
@@ -53,6 +58,52 @@ private HashMap<String,ObjectNode> requestCache = new HashMap<String, ObjectNode
 		JsonNode docs = getDocs(clusterIds, results);
 
 		return docs.toString();
+	}
+
+	public String getDateClusters(String query, boolean force)
+	{
+		//fetch clustered solr results
+		ObjectNode results = fetchResults(query, true);
+		JsonNode docs = results.path("response").path("docs");
+
+		Dataset[] datasets = Cluster.dateCluster(docs);
+
+		ArrayNode clusters = new ArrayNode(JsonNodeFactory.instance);
+		int count=0;
+		for(Dataset set : datasets)
+		{
+			ObjectNode cluster = new ObjectNode(JsonNodeFactory.instance);
+			ArrayNode labels = new ArrayNode(JsonNodeFactory.instance);
+			ArrayNode docsa = new ArrayNode(JsonNodeFactory.instance);
+
+			for(Instance in : set)
+			{
+				String id = (String)in.classValue();
+				Double t1 = in.get(0); //date
+				docsa.add(id);
+			}
+
+			//get time for label
+			long value = new Double(set.get(0).value(0)).longValue();
+			SimpleDateFormat f = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ss'Z'");
+			Date d = null;
+
+			labels.add(f.format(new Date(value)));
+
+			//fill in cluster info
+			cluster.put("labels", labels);
+			cluster.put("score",count);
+			cluster.put("docs",docsa);
+			cluster.put("summary","Do you want one?");
+
+			//finally add it to the clusters array
+			count++;
+			clusters.add(cluster);
+		}
+
+		results.put("clusters", clusters);
+		return results.toString();
+
 	}
 
 	private List<String> getClusterIds(ObjectNode root, String cluster)

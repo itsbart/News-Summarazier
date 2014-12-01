@@ -39,6 +39,16 @@ public class GreetingController {
 		return results;
 	}
 
+	@RequestMapping(value="/query/datecluster", headers="Accept=application/json")
+	public String executeDateQuery(@RequestParam(value="query") String query) {
+
+		//Get solr query results for a cluster
+		String results = manager.getDateClusters(query, false);
+
+		return results;
+	}
+
+
 	@RequestMapping(value="/feeds", headers="Accept=application/json")
 	public String getFeeds() {
 
