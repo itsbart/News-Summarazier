@@ -82,15 +82,21 @@
         }
     }
 
+    /**
+     * The click handler for a list item in the "Topics" panel
+     */
     function onTopicClick() {
         var label;
 
+        // Add/remove CSS classes for coloring the selection
         if ($activeTopic) {
             $activeTopic.removeClass("active");
         }
         $activeTopic = $(this);
         $activeTopic.addClass("active");
 
+        // Clear the results list and fetch articles associated
+        // with the selected topic
         $resultsList.empty();
         label = $activeTopic.data(LABEL_KEY);
         if (label === ALL_TOPICS) {
@@ -225,21 +231,35 @@
         }
     }
 
+    /**
+     * Invoked from a search text box which proceeds to show the main
+     * interface and makes an AJAX request to fetch results.
+     * @param event The generated event object
+     * @param queryStr  The query string
+     */
     function onSearch(event, queryStr) {
-        curQueryStr = queryStr;
+        curQueryStr = queryStr; // Save the query string
+
+        // Hide the topics list until we process the search results
         $topicsList.hide();
         $topicsList.empty();
-        $topicsLoader.fadeIn();
 
-        $resultsList.empty();
+        $topicsLoader.fadeIn(); // Show the loading image
+        $resultsList.empty(); // Clear the results viewport
+
+        // Show the loading image in the main viewport
         $resultsLoader.fadeIn();
+
+        // Enable the "feed" button"
         $addFeedButton.removeAttr("disabled");
 
+        // Clear the timeline view
         $timelineView.empty();
         if (isTimeLineShowing) {
             initTimeline();
         }
 
+        // Fetch search results
         $.ajax({
             url: "query",
             data: {
@@ -247,6 +267,8 @@
             },
             dataType: "json"
         }).done(function (results) {
+
+            // Process search results
             $topicsLoader.hide();
             $topicsList.show();
             $resultsLoader.hide();
@@ -254,6 +276,8 @@
             processResults(results);
 
         }).fail(function (jqXHR, textStatus, errorThrown) {
+
+            // Handle any errors
             $.bootstrapGrowl("Error executing query", {type: "danger", delay: 15000});
         });
     }
